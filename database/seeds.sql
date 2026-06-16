@@ -1,0 +1,5 @@
+-- KEC EMS Seed Data
+-- Use the seed script instead for proper bcrypt password hashing:
+--   npm run seed --workspace=server
+--
+-- Default password for all seed users: password123
