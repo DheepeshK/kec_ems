@@ -10,6 +10,7 @@ import {
   CheckSquare,
 } from 'lucide-react';
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 import type { UserRole } from '../../types';
 
@@ -28,71 +29,179 @@ export function AppLayout() {
 
   const filteredNav = navItems.filter((item) => hasRole(...item.roles));
 
+  const sidebarVariants = {
+    hidden: { x: '-100%', opacity: 0 },
+    visible: {
+      x: 0,
+      opacity: 1,
+      transition: { duration: 0.3 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: { opacity: 1, x: 0 },
+  };
+
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-gradient-to-br from-surface-secondary via-surface to-surface-tertiary">
+      {/* Overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-slate-900 transition-transform lg:static lg:translate-x-0 ${
+      {/* Sidebar */}
+      <motion.aside
+        variants={sidebarVariants}
+        initial={sidebarOpen ? 'visible' : 'hidden'}
+        animate={sidebarOpen ? 'visible' : 'hidden'}
+        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-gradient-to-b from-dark-accent to-slate-900 lg:static lg:z-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        } lg:translate-x-0`}
       >
-        <div className="flex h-16 items-center justify-between px-6">
-          <Link to="/dashboard" className="text-xl font-bold text-white">KEC EMS</Link>
-          <button className="lg:hidden text-white" onClick={() => setSidebarOpen(false)}>
+        {/* Sidebar Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="flex h-20 items-center justify-between px-6 border-b border-slate-700/50"
+        >
+          <Link to="/dashboard" className="flex items-center gap-2">
+            <motion.div
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              className="text-2xl font-bold bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent"
+            >
+              KEC
+            </motion.div>
+          </Link>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            className="lg:hidden text-slate-300 hover:text-white transition-colors"
+            onClick={() => setSidebarOpen(false)}
+          >
             <X className="h-6 w-6" />
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
 
-        <nav className="mt-4 space-y-1 px-3">
+        {/* Navigation */}
+        <motion.nav
+          className="mt-8 space-y-2 px-3"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: {
+              transition: {
+                staggerChildren: 0.05,
+              },
+            },
+          }}
+        >
           {filteredNav.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname.startsWith(item.path);
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive ? 'bg-primary-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
-                onClick={() => setSidebarOpen(false)}
-              >
-                <Icon className="h-5 w-5" />
-                {item.label}
-              </Link>
+              <motion.div key={item.path} variants={itemVariants}>
+                <Link
+                  to={item.path}
+                  className="relative group"
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <motion.div
+                    whileHover={{ x: 4 }}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+                      isActive
+                        ? 'bg-gradient-to-r from-primary-500/30 to-accent-500/30 text-primary-300 border border-primary-500/30'
+                        : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="sidebar-active"
+                        className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary-500/20 to-accent-500/20 -z-10"
+                        transition={{ duration: 0.3 }}
+                      />
+                    )}
+                    <Icon className="h-5 w-5 flex-shrink-0" />
+                    <span>{item.label}</span>
+                  </motion.div>
+                </Link>
+              </motion.div>
             );
           })}
-        </nav>
+        </motion.nav>
 
-        <div className="absolute bottom-0 w-full border-t border-slate-700 p-4">
+        {/* User Info & Logout */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="absolute bottom-0 w-full border-t border-slate-700/50 bg-gradient-to-t from-slate-900 to-slate-800/50 p-4"
+        >
           <div className="mb-3 px-3">
-            <p className="text-sm font-medium text-white">{user?.name}</p>
-            <p className="text-xs text-slate-400">{user?.role.replace('_', ' ')}</p>
+            <p className="text-sm font-semibold text-white truncate">{user?.name}</p>
+            <p className="text-xs text-slate-400 capitalize">
+              {user?.role.replace('_', ' ')}
+            </p>
           </div>
-          <button
+          <motion.button
+            whileHover={{ backgroundColor: 'rgba(88, 86, 214, 0.1)' }}
             onClick={logout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 hover:text-white transition-colors"
           >
             <LogOut className="h-5 w-5" />
-            Logout
-          </button>
-        </div>
-      </aside>
+            <span>Logout</span>
+          </motion.button>
+        </motion.div>
+      </motion.aside>
 
+      {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-slate-200 bg-white px-4 lg:px-8">
-          <button className="lg:hidden" onClick={() => setSidebarOpen(true)}>
-            <Menu className="h-6 w-6 text-slate-600" />
-          </button>
+        {/* Header */}
+        <motion.header
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="sticky top-0 z-30 flex h-20 items-center gap-4 border-b border-slate-200/50 glass px-4 lg:px-8"
+        >
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            className="lg:hidden text-slate-600 hover:text-slate-900 transition-colors"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu className="h-6 w-6" />
+          </motion.button>
+
           <div className="flex-1" />
-          <Link to="/" className="text-sm text-primary-600 hover:text-primary-700">
-            View Public Site
-          </Link>
-        </header>
-        <main className="flex-1 p-4 lg:p-8">
-          <Outlet />
+
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            className="flex items-center gap-2"
+          >
+            <Link
+              to="/"
+              className="px-4 py-2 rounded-lg text-sm font-medium text-primary-600 hover:bg-primary-50 transition-colors"
+            >
+              View Public Site
+            </Link>
+          </motion.div>
+        </motion.header>
+
+        {/* Main Content Area */}
+        <main className="flex-1 p-4 lg:p-8 overflow-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Outlet />
+          </motion.div>
         </main>
       </div>
     </div>
